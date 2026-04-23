@@ -95,7 +95,7 @@ flowchart TD
         ROUTER["Query Router\nclassify intent"]
         CYPHER["Cypher Generator\nLLM-assisted graph traversal"]
         VRET["Vector Retriever\nsemantic similarity search"]
-        SYNTH["Answer Synthesizer\nClaude / GPT-4o"]
+        SYNTH["Answer Synthesizer\nClaude"]
     end
 
     subgraph UI["🖥️ Interface"]
@@ -132,8 +132,8 @@ flowchart TD
 | Graph querying | Cypher |
 | Embeddings | OpenAI `text-embedding-3-small` or `sentence-transformers` |
 | Vector index | Neo4j vector index (built-in) or pgvector |
-| LLM reasoning | Claude or GPT-4o via API |
-| Query orchestration | LangChain or LlamaIndex (GraphRAG module) |
+| LLM reasoning | Claude via API |
+| Query orchestration | LangChain |
 | Interface | Streamlit |
 
 ---
