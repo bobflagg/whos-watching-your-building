@@ -56,33 +56,69 @@ All data is sourced from [NYC Open Data](https://opendata.cityofnewyork.us/) via
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Data Ingestion                     │
-│         NYC Open Data API (SODA) → Python           │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│               Graph Construction                     │
-│         BBL-linked entity graph → Neo4j             │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│           Vector Embedding Layer                     │
-│   Text fields (descriptors, resolutions) → embeddings│
-│              stored alongside graph nodes            │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│              Graph RAG Query Engine                  │
-│   Natural language → Cypher + vector retrieval      │
-│              → LLM-synthesized answer               │
-└──────────────────────┬──────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────┐
-│              Query Interface                         │
-│           Streamlit / CLI / API endpoint            │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph SOURCES["📂 NYC Open Data Sources"]
+        D1["HPD Complaints\nuwyv-629c"]
+        D2["HPD Violations\nwvxf-dwi5"]
+        D3["HPD Registrations\ntesw-yqqr"]
+        D4["311 Service Requests\nerm2-nwe9"]
+        D5["DOB Violations\n3h2n-5cm9"]
+    end
+
+    subgraph INGEST["⚙️ Data Ingestion"]
+        SODA["Socrata Open Data API\nsodapy"]
+        CLEAN["Clean & Normalize\nBBL join key resolution"]
+    end
+
+    subgraph GRAPH["🕸️ Knowledge Graph — Neo4j"]
+        N1(["Building / BBL"])
+        N2(["Complaint"])
+        N3(["Violation"])
+        N4(["Owner / Landlord"])
+        N5(["Agency"])
+        N6(["Neighborhood / NTA"])
+
+        N2 -->|FILED_AGAINST| N1
+        N1 -->|HAS_VIOLATION| N3
+        N1 -->|OWNED_BY| N4
+        N1 -->|LOCATED_IN| N6
+        N2 -->|HANDLED_BY| N5
+    end
+
+    subgraph EMBED["🔢 Embedding Layer"]
+        EMB["Text Embeddings\nOpenAI / sentence-transformers"]
+        VIDX["Vector Index\nNeo4j vector index"]
+    end
+
+    subgraph RAG["🤖 Graph RAG Engine"]
+        ROUTER["Query Router\nclassify intent"]
+        CYPHER["Cypher Generator\nLLM-assisted graph traversal"]
+        VRET["Vector Retriever\nsemantic similarity search"]
+        SYNTH["Answer Synthesizer\nClaude / GPT-4o"]
+    end
+
+    subgraph UI["🖥️ Interface"]
+        APP["Streamlit App"]
+        CLI["CLI / API endpoint"]
+    end
+
+    D1 & D2 & D3 & D4 & D5 --> SODA
+    SODA --> CLEAN
+    CLEAN --> GRAPH
+    CLEAN --> EMB
+    EMB --> VIDX
+    VIDX --> GRAPH
+
+    GRAPH --> CYPHER
+    GRAPH --> VRET
+    VIDX --> VRET
+
+    USER(["👤 User Query"]) --> APP & CLI
+    APP & CLI --> ROUTER
+    ROUTER --> CYPHER & VRET
+    CYPHER & VRET --> SYNTH
+    SYNTH --> APP & CLI
 ```
 
 ---
