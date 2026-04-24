@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Phase 0 — Foundation**
+**Phase 0 — Foundation** ✓
 Dev environment, Neo4j Desktop setup, API keys, `.env` structure
 
 **Phase 1 — Data Exploration**
