@@ -10,7 +10,7 @@ Pulled last 6 months (`LOOKBACK_MONTHS=6`, cutoff ~2025-10-28).
 |---|---|---|---|---|
 | 311 HPD Complaints | `311_hpd_complaints.parquet` | 500,000 | 35 | `created_date` |
 | HPD Violations | `hpd_violations.parquet` | 453,355 | 41 | `inspectiondate` |
-| HPD Registrations | `hpd_registrations.parquet` | 30,404 | 16 | `lastregistrationdate` |
+| HPD Registrations | `hpd_registrations.parquet` | 202,667 | 16 | none (full pull) |
 
 ---
 
@@ -41,7 +41,7 @@ Phase 2 should add this as a derived column before joining.
 ### HPD Registrations
 - No high-null columns — clean dataset.
 - **No direct `bbl` column** — requires construction from components (see above).
-- 30,404 rows for 6 months reflects this is a slow-moving dataset (property registrations don't change frequently). Phase 2 may want to pull a longer window or consider pulling the full dataset for registrations.
+- **Full pull** (no date filter): 202,667 rows. Registrations represent current ownership state, not a time-series of events, so the full dataset is pulled and refreshed each run.
 
 ---
 
@@ -49,5 +49,5 @@ Phase 2 should add this as a derived column before joining.
 
 1. **Paginate 311 complaints** — use `$offset` to retrieve all records within the lookback window, not just the first 500k.
 2. **Construct BBL on registrations** — derive a `bbl` column from `boroid` + `block` + `lot` before joining.
-3. **Consider full pull for registrations** — 30k rows for 6 months is small; a full pull may be more useful since registrations represent current ownership state, not a time-series of events.
+3. **Registrations are a full pull** — 202k rows, no date filter. Refresh the full dataset each ingestion run.
 4. **Lookback window for violations** — 453k rows in 6 months is substantial; verify the window is right for the use case before widening it.

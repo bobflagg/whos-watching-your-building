@@ -10,12 +10,9 @@ def _(mo):
     # HPD Registrations — Schema Exploration
     **Dataset:** HPD Property Registrations (`tesw-yqqr`)
 
-    Pulls the last `LOOKBACK_MONTHS` months using `lastmodifieddate` as the date filter,
-    saves to `data/raw/`, and documents schema, null rates, and BBL coverage.
-
-    > **Note:** Registrations represent property ownership records rather than events.
-    > `lastregistrationdate` captures buildings re-registered recently. Alternative: `registrationenddate`.
-    > Confirm the right field for Phase 2 ingestion strategy.
+    Full pull (no date filter) — registrations represent current ownership state,
+    not a time-series of events, so the full dataset is more useful than a recent slice.
+    Saves to `data/raw/` and documents schema, null rates, and BBL component coverage.
     """)
     return
 
@@ -26,19 +23,13 @@ def _():
     import marimo as mo
     import pandas as pd
     sys.path.insert(0, "..")
-    from src.ingest.soda_client import fetch_recent, cutoff_date, lookback_months
-    return cutoff_date, fetch_recent, lookback_months, mo, pd, sys
+    from src.ingest.soda_client import fetch_all
+    return fetch_all, mo, pd, sys
 
 
 @app.cell
-def _(cutoff_date, lookback_months, mo):
-    mo.md(f"**Lookback window:** {lookback_months()} months (cutoff: {cutoff_date().strftime('%Y-%m-%d')})")
-    return
-
-
-@app.cell
-def _(fetch_recent):
-    df = fetch_recent("tesw-yqqr", "lastregistrationdate")
+def _(fetch_all):
+    df = fetch_all("tesw-yqqr")
     print(f"Pulled {len(df):,} rows, {len(df.columns)} columns")
     return (df,)
 

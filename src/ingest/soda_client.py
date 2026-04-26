@@ -20,6 +20,16 @@ def cutoff_date() -> datetime:
     return datetime.now() - timedelta(days=30 * _LOOKBACK_MONTHS)
 
 
+def fetch_all(dataset_id: str) -> pd.DataFrame:
+    """Fetch all records from a dataset with no date filter."""
+    client = Socrata(_DOMAIN, app_token=_APP_TOKEN, timeout=60)
+    try:
+        records = client.get(dataset_id, limit=500_000)
+    finally:
+        client.close()
+    return pd.DataFrame.from_records(records)
+
+
 def fetch_recent(dataset_id: str, date_field: str, **filters) -> pd.DataFrame:
     """Fetch records newer than the LOOKBACK_MONTHS cutoff.
 
