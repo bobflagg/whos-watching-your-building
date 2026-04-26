@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.23.2"
-app = marimo.App(width="full", title="311 HPD Complaints — Schema Exploration")
+app = marimo.App(width="full")
 
 
 @app.cell(hide_code=True)
@@ -23,7 +23,8 @@ def _():
     import pandas as pd
     sys.path.insert(0, "..")
     from src.ingest.soda_client import fetch_recent, cutoff_date, lookback_months
-    return cutoff_date, fetch_recent, lookback_months, mo, pd, sys
+
+    return cutoff_date, fetch_recent, lookback_months, mo, pd
 
 
 @app.cell
@@ -46,12 +47,14 @@ def _(df):
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out, index=False)
     print(f"Saved → {out}")
-    return (out,)
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("## Schema")
+    mo.md("""
+    ## Schema
+    """)
     return
 
 
@@ -64,12 +67,14 @@ def _(df, pd):
         "sample": [df[c].dropna().iloc[0] if df[c].notna().any() else None for c in df.columns],
     })
     schema
-    return (schema,)
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("## BBL Coverage")
+    mo.md("""
+    ## BBL Coverage
+    """)
     return
 
 
@@ -82,12 +87,20 @@ def _(df, mo):
         mo.md(f"**BBL field:** `{bbl_col}` — {non_null:,} / {total:,} non-null ({100*non_null/total:.1f}%)")
     else:
         mo.md("**BBL field:** not found — check column names above")
-    return (bbl_col,)
+    return bbl_col, non_null, total
+
+
+@app.cell
+def _(bbl_col, mo, non_null, total):
+    mo.md(f"**BBL field:** `{bbl_col}` — {non_null:,} / {total:,} non-null ({100*non_null/total:.1f}%)")
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md("## Sample Rows")
+    mo.md("""
+    ## Sample Rows
+    """)
     return
 
 
