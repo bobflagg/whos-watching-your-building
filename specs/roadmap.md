@@ -4,10 +4,10 @@
 Dev environment, Neo4j Desktop setup, API keys, `.env` structure
 
 **Phase 1 — Data Exploration**
-Pull the three core HPD datasets (Complaints `uwyv-629c`, Violations `wvxf-dwi5`, Registrations `tesw-yqqr`) via SODA, explore schemas, understand BBL coverage and join logic
+Pull a configurable recent sample of the three core datasets (311 Service Requests `erm2-nwe9` filtered to `agency='HPD'`, Violations `wvxf-dwi5`, Registrations `tesw-yqqr`) via SODA; default window is last 6 months (controlled by a `LOOKBACK_MONTHS` env var so it can be extended without code changes); explore schemas, understand BBL coverage and join logic
 
 **Phase 2 — Core Data Ingestion**
-Ingest and normalize the three core HPD datasets, implement BBL resolution logic, validate joins across all three
+Ingest and normalize the three core datasets, implement BBL resolution logic, validate joins across all three
 
 **Phase 3 — Graph Schema Design**
 Define and document node types, relationship types, and cardinalities before building:
@@ -22,7 +22,7 @@ Define and document node types, relationship types, and cardinalities before bui
 Load nodes and relationships into Neo4j, validate with sample Cypher queries
 
 **Phase 5 — Enrichment Data Ingestion**
-Pull 311 Service Requests (`erm2-nwe9`, filtered to `agency='HPD'`) and DOB Violations (`3h2n-5cm9`), integrate into the existing graph
+Pull DOB Violations (`3h2n-5cm9`), integrate into the existing graph
 
 **Phase 6 — Embeddings**
 Identify text fields to embed, generate embeddings with `sentence-transformers`, attach to nodes
