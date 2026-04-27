@@ -23,7 +23,10 @@ def ensure_constraints(driver) -> None:
         ("Building", "bbl"),
         ("Complaint", "complaint_id"),
         ("Violation", "violation_id"),
-        ("Registration", "registration_id"),
+        ("Landlord", "registration_id"),
+        ("Agency", "agency_code"),
+        ("Inspection", "inspection_id"),
+        ("Neighborhood", "ntacode"),
     ]
     with driver.session(database=_DATABASE) as session:
         for label, prop in constraints:
@@ -54,6 +57,32 @@ def load_buildings(driver, bbls: list[str]) -> int:
     return written
 
 
+def load_building_addresses(driver, df: pd.DataFrame) -> int:
+    """Enrich Building nodes with address fields. Uses COALESCE so existing values are never overwritten.
+
+    Returns number of Building nodes touched.
+    """
+    written = 0
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MATCH (b:Building {bbl: row.bbl}) "
+                "SET b.borough         = COALESCE(b.borough,         row.boro), "
+                "    b.house_number    = COALESCE(b.house_number,    row.housenumber), "
+                "    b.street_name     = COALESCE(b.street_name,     row.streetname), "
+                "    b.zip             = COALESCE(b.zip,             row.zip), "
+                "    b.community_board = COALESCE(b.community_board, row.communityboard), "
+                "    b.bin             = COALESCE(b.bin,             row.bin), "
+                "    b.block           = COALESCE(b.block,           row.block), "
+                "    b.lot             = COALESCE(b.lot,             row.lot) "
+                "RETURN count(b) AS n",
+                rows=batch,
+            )
+            written += result.single()["n"]
+    return written
+
+
 def load_complaints(driver, df: pd.DataFrame) -> tuple[int, int]:
     """MERGE Complaint nodes and [:FILED_AGAINST] relationships to Building.
 
@@ -71,8 +100,13 @@ def load_complaints(driver, df: pd.DataFrame) -> tuple[int, int]:
                 "    complaint_type: row.complaint_type, "
                 "    descriptor: row.descriptor, "
                 "    status: row.status, "
+                "    resolution_description: row.resolution_description, "
+                "    resolution_action_updated_date: row.resolution_action_updated_date, "
                 "    borough: row.borough, "
                 "    incident_address: row.incident_address, "
+                "    community_board: row.community_board, "
+                "    latitude: row.latitude, "
+                "    longitude: row.longitude, "
                 "    bbl: row.bbl "
                 "  } "
                 "WITH c, row "
@@ -87,8 +121,33 @@ def load_complaints(driver, df: pd.DataFrame) -> tuple[int, int]:
     return nodes, rels
 
 
+def load_agencies(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE Agency nodes and [:HANDLED_BY] relationships from Complaint.
+
+    Returns (nodes_written, rels_written).
+    """
+    nodes, rels = 0, 0
+    agency_df = df[df["agency"].notna()].copy()
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(agency_df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MERGE (a:Agency {agency_code: row.agency}) "
+                "  SET a.agency_name = row.agency_name "
+                "WITH a, row "
+                "MATCH (c:Complaint {complaint_id: row.unique_key}) "
+                "MERGE (c)-[r:HANDLED_BY]->(a) "
+                "RETURN count(DISTINCT a) AS n, count(r) AS m",
+                rows=batch,
+            )
+            record = result.single()
+            nodes += record["n"]
+            rels += record["m"]
+    return nodes, rels
+
+
 def load_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
-    """MERGE Violation nodes and [:FILED_AGAINST] relationships to Building.
+    """MERGE Violation nodes and [:HAS_VIOLATION] relationships from Building.
 
     Returns (nodes_written, rels_written).
     """
@@ -99,19 +158,25 @@ def load_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
                 "UNWIND $rows AS row "
                 "MERGE (v:Violation {violation_id: row.violationid}) "
                 "  SET v += { "
-                "    inspection_date: row.inspectiondate, "
-                "    approved_date: row.approveddate, "
                 "    class: row.class, "
-                "    type: row.violationtype, "
+                "    type: row.novtype, "
                 "    status: row.violationstatus, "
                 "    description: row.novdescription, "
+                "    order_number: row.ordernumber, "
+                "    nov_id: row.novid, "
+                "    nov_issued_date: row.novissueddate, "
+                "    current_status: row.currentstatus, "
+                "    current_status_date: row.currentstatusdate, "
+                "    rent_impairing: row.rentimpairing, "
                 "    apartment: row.apartment, "
                 "    story: row.story, "
+                "    certify_by_date: row.newcertifybydate, "
+                "    correct_by_date: row.newcorrectbydate, "
                 "    bbl: row.bbl "
                 "  } "
                 "WITH v, row "
                 "MATCH (b:Building {bbl: row.bbl}) "
-                "MERGE (v)-[r:FILED_AGAINST]->(b) "
+                "MERGE (b)-[r:HAS_VIOLATION]->(v) "
                 "RETURN count(v) AS n, count(r) AS m",
                 rows=batch,
             )
@@ -121,8 +186,8 @@ def load_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
     return nodes, rels
 
 
-def load_registrations(driver, df: pd.DataFrame) -> tuple[int, int]:
-    """MERGE Registration nodes and [:REGISTERED_TO] relationships to Building.
+def load_inspections(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE Inspection nodes and [:INSPECTED_BY] relationships from Violation.
 
     Returns (nodes_written, rels_written).
     """
@@ -131,20 +196,72 @@ def load_registrations(driver, df: pd.DataFrame) -> tuple[int, int]:
         for batch in _batches(df, _BATCH_SIZE):
             result = session.run(
                 "UNWIND $rows AS row "
-                "MERGE (r:Registration {registration_id: row.registrationid}) "
-                "  SET r += { "
+                "MERGE (i:Inspection {inspection_id: row.violationid}) "
+                "  SET i += { "
+                "    inspection_date: row.inspectiondate, "
+                "    approved_date: row.approveddate, "
+                "    certified_date: row.certifieddate, "
+                "    original_certify_by_date: row.originalcertifybydate, "
+                "    original_correct_by_date: row.originalcorrectbydate "
+                "  } "
+                "WITH i, row "
+                "MATCH (v:Violation {violation_id: row.violationid}) "
+                "MERGE (v)-[r:INSPECTED_BY]->(i) "
+                "RETURN count(i) AS n, count(r) AS m",
+                rows=batch,
+            )
+            record = result.single()
+            nodes += record["n"]
+            rels += record["m"]
+    return nodes, rels
+
+
+def load_neighborhoods(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE Neighborhood nodes and [:LOCATED_IN] relationships from Building.
+
+    Returns (nodes_written, rels_written).
+    """
+    nodes, rels = 0, 0
+    nta_df = df[df["nta"].notna() & (df["nta"] != "")].copy()
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(nta_df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MERGE (n:Neighborhood {ntacode: row.nta}) "
+                "  SET n.borough = row.boro "
+                "WITH n, row "
+                "MATCH (b:Building {bbl: row.bbl}) "
+                "MERGE (b)-[r:LOCATED_IN]->(n) "
+                "RETURN count(DISTINCT n) AS n, count(r) AS m",
+                rows=batch,
+            )
+            record = result.single()
+            nodes += record["n"]
+            rels += record["m"]
+    return nodes, rels
+
+
+def load_registrations(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE Landlord nodes and [:OWNED_BY] relationships from Building.
+
+    Returns (nodes_written, rels_written).
+    """
+    nodes, rels = 0, 0
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MERGE (l:Landlord {registration_id: row.registrationid}) "
+                "  SET l += { "
                 "    building_id: row.buildingid, "
-                "    lifecycle_stage: row.lifecyclestage, "
-                "    last_modified: row.lastmodifieddate, "
-                "    owner_first_name: row.ownerfirstname, "
-                "    owner_last_name: row.ownerlastname, "
-                "    owner_type: row.ownertype, "
+                "    last_registration_date: row.lastregistrationdate, "
+                "    registration_end_date: row.registrationenddate, "
                 "    bbl: row.bbl "
                 "  } "
-                "WITH r, row "
+                "WITH l, row "
                 "MATCH (b:Building {bbl: row.bbl}) "
-                "MERGE (r)-[rel:REGISTERED_TO]->(b) "
-                "RETURN count(r) AS n, count(rel) AS m",
+                "MERGE (b)-[rel:OWNED_BY]->(l) "
+                "RETURN count(l) AS n, count(rel) AS m",
                 rows=batch,
             )
             record = result.single()
