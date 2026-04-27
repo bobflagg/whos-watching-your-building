@@ -57,6 +57,32 @@ def load_buildings(driver, bbls: list[str]) -> int:
     return written
 
 
+def load_building_addresses(driver, df: pd.DataFrame) -> int:
+    """Enrich Building nodes with address fields. Uses COALESCE so existing values are never overwritten.
+
+    Returns number of Building nodes touched.
+    """
+    written = 0
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MATCH (b:Building {bbl: row.bbl}) "
+                "SET b.borough         = COALESCE(b.borough,         row.boro), "
+                "    b.house_number    = COALESCE(b.house_number,    row.housenumber), "
+                "    b.street_name     = COALESCE(b.street_name,     row.streetname), "
+                "    b.zip             = COALESCE(b.zip,             row.zip), "
+                "    b.community_board = COALESCE(b.community_board, row.communityboard), "
+                "    b.bin             = COALESCE(b.bin,             row.bin), "
+                "    b.block           = COALESCE(b.block,           row.block), "
+                "    b.lot             = COALESCE(b.lot,             row.lot) "
+                "RETURN count(b) AS n",
+                rows=batch,
+            )
+            written += result.single()["n"]
+    return written
+
+
 def load_complaints(driver, df: pd.DataFrame) -> tuple[int, int]:
     """MERGE Complaint nodes and [:FILED_AGAINST] relationships to Building.
 

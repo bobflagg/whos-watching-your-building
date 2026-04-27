@@ -2,6 +2,7 @@ from src.graph.loader import (
     ensure_constraints,
     get_driver,
     load_agencies,
+    load_building_addresses,
     load_buildings,
     load_complaints,
     load_inspections,
@@ -67,6 +68,11 @@ def run() -> None:
     print("Loading Building nodes...")
     building_count = load_buildings(driver, all_bbls)
     print(f"  {building_count:,} Building nodes")
+
+    print("Enriching Building nodes with address data...")
+    load_building_addresses(driver, violations)
+    load_building_addresses(driver, registrations)
+    print("  Done")
 
     print("Loading Complaint nodes and relationships...")
     c_nodes, c_rels = load_complaints(driver, complaints)
