@@ -6,7 +6,7 @@ Dev environment, Neo4j Desktop setup, API keys, `.env` structure
 **Phase 1 — Data Exploration** ✓
 Pull a configurable recent sample of the three core datasets (311 Service Requests `erm2-nwe9` filtered to `agency='HPD'`, Violations `wvxf-dwi5`, Registrations `tesw-yqqr`) via SODA; default window is last 6 months (controlled by a `LOOKBACK_MONTHS` env var so it can be extended without code changes); explore schemas, understand BBL coverage and join logic
 
-**Phase 2 — Core Data Ingestion**
+**Phase 2 — Core Data Ingestion** ✓
 Ingest and normalize the three core datasets, implement BBL resolution logic, validate joins across all three
 
 **Phase 3 — Graph Schema Design**

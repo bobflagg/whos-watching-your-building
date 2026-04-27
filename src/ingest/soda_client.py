@@ -47,3 +47,36 @@ def fetch_recent(dataset_id: str, date_field: str, **filters) -> pd.DataFrame:
         client.close()
 
     return pd.DataFrame.from_records(records)
+
+
+def fetch_recent_paginated(
+    dataset_id: str,
+    date_field: str,
+    page_size: int = 50_000,
+    **filters,
+) -> pd.DataFrame:
+    """Fetch all records newer than the LOOKBACK_MONTHS cutoff, paginating past the 500k cap.
+
+    Uses $offset to page through results until a page returns fewer rows than page_size.
+    Extra keyword args are added as equality filters, e.g. agency='HPD'.
+    """
+    cutoff = cutoff_date().strftime("%Y-%m-%dT%H:%M:%S")
+    clauses = [f"{date_field} >= '{cutoff}'"]
+    for field, value in filters.items():
+        clauses.append(f"{field}='{value}'")
+    where = " AND ".join(clauses)
+
+    client = Socrata(_DOMAIN, app_token=_APP_TOKEN, timeout=60)
+    all_records = []
+    offset = 0
+    try:
+        while True:
+            page = client.get(dataset_id, where=where, limit=page_size, offset=offset)
+            all_records.extend(page)
+            if len(page) < page_size:
+                break
+            offset += page_size
+    finally:
+        client.close()
+
+    return pd.DataFrame.from_records(all_records)
