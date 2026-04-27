@@ -9,7 +9,7 @@ Pull a configurable recent sample of the three core datasets (311 Service Reques
 **Phase 2 — Core Data Ingestion** ✓
 Ingest and normalize the three core datasets, implement BBL resolution logic, validate joins across all three
 
-**Phase 3 — Graph Schema Design**
+**Phase 3 — Graph Schema Design** ✓
 Define and document node types, relationship types, and cardinalities before building:
 - `(Complaint) -[FILED_AGAINST]-> (Building/BBL)`
 - `(Building) -[HAS_VIOLATION]-> (Violation)`
