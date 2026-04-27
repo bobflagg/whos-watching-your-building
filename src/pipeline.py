@@ -1,8 +1,11 @@
 from src.graph.loader import (
     ensure_constraints,
     get_driver,
+    load_agencies,
     load_buildings,
     load_complaints,
+    load_inspections,
+    load_neighborhoods,
     load_registrations,
     load_violations,
 )
@@ -69,13 +72,25 @@ def run() -> None:
     c_nodes, c_rels = load_complaints(driver, complaints)
     print(f"  {c_nodes:,} Complaint nodes, {c_rels:,} FILED_AGAINST relationships")
 
+    print("Loading Agency nodes and relationships...")
+    a_nodes, a_rels = load_agencies(driver, complaints)
+    print(f"  {a_nodes:,} Agency nodes, {a_rels:,} HANDLED_BY relationships")
+
     print("Loading Violation nodes and relationships...")
     v_nodes, v_rels = load_violations(driver, violations)
-    print(f"  {v_nodes:,} Violation nodes, {v_rels:,} FILED_AGAINST relationships")
+    print(f"  {v_nodes:,} Violation nodes, {v_rels:,} HAS_VIOLATION relationships")
 
-    print("Loading Registration nodes and relationships...")
-    r_nodes, r_rels = load_registrations(driver, registrations)
-    print(f"  {r_nodes:,} Registration nodes, {r_rels:,} REGISTERED_TO relationships")
+    print("Loading Inspection nodes and relationships...")
+    i_nodes, i_rels = load_inspections(driver, violations)
+    print(f"  {i_nodes:,} Inspection nodes, {i_rels:,} INSPECTED_BY relationships")
+
+    print("Loading Neighborhood nodes and relationships...")
+    n_nodes, n_rels = load_neighborhoods(driver, violations)
+    print(f"  {n_nodes:,} Neighborhood nodes, {n_rels:,} LOCATED_IN relationships")
+
+    print("Loading Landlord nodes and relationships...")
+    l_nodes, l_rels = load_registrations(driver, registrations)
+    print(f"  {l_nodes:,} Landlord nodes, {l_rels:,} OWNED_BY relationships")
 
     driver.close()
     print("Done.")
