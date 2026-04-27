@@ -18,7 +18,7 @@ Define and document node types, relationship types, and cardinalities before bui
 - `(Complaint) -[HANDLED_BY]-> (Agency)`
 - `(Violation) -[INSPECTED_BY]-> (Inspection)`
 
-**Phase 4 — Graph Loading**
+**Phase 4 — Graph Loading** ✓
 Load nodes and relationships into Neo4j, validate with sample Cypher queries
 
 **Phase 5 — Enrichment Data Ingestion**
