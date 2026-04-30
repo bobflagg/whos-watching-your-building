@@ -31,7 +31,7 @@ def _():
     from src.graph.loader import get_driver, _DATABASE
 
     driver = get_driver()
-    return _DATABASE, driver, pd
+    return driver, pd
 
 
 @app.cell(hide_code=True)
@@ -62,7 +62,7 @@ def _(driver, pd):
             node_counts.append({"label": label, "count": count, "pass": count > 0})
 
     pd.DataFrame(node_counts)
-    return (node_counts,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -86,13 +86,13 @@ def _(driver, pd):
         ("INSPECTED_BY",   "(Violation)→(Inspection)", "MATCH (:Violation)-[r:INSPECTED_BY]->(:Inspection)  RETURN count(r) AS n"),
     ]
     rel_counts = []
-    with driver.session(database=_DATABASE) as session:
-        for rel_type, direction, q in rel_queries:
-            count = session.run(q).single()["n"]
-            rel_counts.append({"type": rel_type, "direction": direction, "count": count, "pass": count > 0})
+    with driver.session(database=_DATABASE) as _session:
+        for rel_type, direction, _q in rel_queries:
+            _count = _session.run(_q).single()["n"]
+            rel_counts.append({"type": rel_type, "direction": direction, "count": _count, "pass": _count > 0})
 
     pd.DataFrame(rel_counts)
-    return (rel_counts,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -114,10 +114,10 @@ def _(driver, pd):
          "MATCH (:Violation)-[r:FILED_AGAINST]->(:Building) RETURN count(r) AS n"),
     ]
     stale_counts = []
-    with driver.session(database=_DATABASE) as session:
-        for label, q in stale_queries:
-            count = session.run(q).single()["n"]
-            stale_counts.append({"check": label, "count": count, "pass": count == 0})
+    with driver.session(database=_DATABASE) as _session:
+        for _label, _q in stale_queries:
+            _count = _session.run(_q).single()["n"]
+            stale_counts.append({"check": _label, "count": _count, "pass": _count == 0})
 
     pd.DataFrame(stale_counts)
     return
@@ -135,19 +135,19 @@ def _(mo):
 
 @app.cell
 def _(driver, pd):
-    with driver.session(database=_DATABASE) as session:
-        total_complaints = session.run("MATCH (n:Complaint) RETURN count(n) AS n").single()["n"]
-        linked_complaints = session.run(
+    with driver.session(database=_DATABASE) as _session:
+        total_complaints = _session.run("MATCH (n:Complaint) RETURN count(n) AS n").single()["n"]
+        linked_complaints = _session.run(
             "MATCH (c:Complaint)-[:FILED_AGAINST]->(:Building) RETURN count(c) AS n"
         ).single()["n"]
 
-        total_violations = session.run("MATCH (n:Violation) RETURN count(n) AS n").single()["n"]
-        linked_violations = session.run(
+        total_violations = _session.run("MATCH (n:Violation) RETURN count(n) AS n").single()["n"]
+        linked_violations = _session.run(
             "MATCH (:Building)-[:HAS_VIOLATION]->(v:Violation) RETURN count(v) AS n"
         ).single()["n"]
 
-        total_buildings = session.run("MATCH (n:Building) RETURN count(n) AS n").single()["n"]
-        owned_buildings = session.run(
+        total_buildings = _session.run("MATCH (n:Building) RETURN count(n) AS n").single()["n"]
+        owned_buildings = _session.run(
             "MATCH (b:Building)-[:OWNED_BY]->(:Landlord) RETURN count(DISTINCT b) AS n"
         ).single()["n"]
 
@@ -194,8 +194,8 @@ def _(mo):
 
 @app.cell
 def _(driver, pd):
-    with driver.session(database=_DATABASE) as session:
-        result = session.run("SHOW CONSTRAINTS")
+    with driver.session(database=_DATABASE) as _session:
+        result = _session.run("SHOW CONSTRAINTS")
         constraints = [
             {"name": r["name"], "type": r["type"], "labelsOrTypes": r["labelsOrTypes"], "properties": r["properties"]}
             for r in result
@@ -239,8 +239,8 @@ def _(mo):
 
 @app.cell
 def _(driver, mo):
-    with driver.session(database=_DATABASE) as session:
-        sample_bbl_result = session.run(
+    with driver.session(database=_DATABASE) as _session:
+        sample_bbl_result = _session.run(
             "MATCH (b:Building)-[:HAS_VIOLATION]->(:Violation) "
             "MATCH (b)-[:OWNED_BY]->(:Landlord) "
             "RETURN b.bbl AS bbl LIMIT 1"
@@ -250,8 +250,8 @@ def _(driver, mo):
         mo.md("**No BBL found with both violations and a landlord.**")
     else:
         sample_bbl = sample_bbl_result["bbl"]
-        with driver.session(database=_DATABASE) as session:
-            record = session.run(
+        with driver.session(database=_DATABASE) as _session:
+            record = _session.run(
                 "MATCH (b:Building {bbl: $bbl}) "
                 "OPTIONAL MATCH (c:Complaint)-[:FILED_AGAINST]->(b) "
                 "OPTIONAL MATCH (b)-[:HAS_VIOLATION]->(v:Violation) "
@@ -267,15 +267,33 @@ def _(driver, mo):
             ).single()
 
         mo.md(f"""
-**Sample BBL:** `{record['bbl']}`
+    **Sample BBL:** `{record['bbl']}`
 
-| Metric | Count |
-|---|---|
-| Complaints | {record['complaints']} |
-| Violations | {record['violations']} |
-| Landlord registrations | {record['landlords']} |
-| Neighborhood (NTA) | {record['neighborhood'] or 'n/a'} |
+    | Metric | Count |
+    |---|---|
+    | Complaints | {record['complaints']} |
+    | Violations | {record['violations']} |
+    | Landlord registrations | {record['landlords']} |
+    | Neighborhood (NTA) | {record['neighborhood'] or 'n/a'} |
         """)
+    return
+
+
+@app.cell
+def _():
+    (
+        "MATCH (b:Building {bbl: $bbl}) "
+        "OPTIONAL MATCH (c:Complaint)-[:FILED_AGAINST]->(b) "
+        "OPTIONAL MATCH (b)-[:HAS_VIOLATION]->(v:Violation) "
+        "OPTIONAL MATCH (b)-[:OWNED_BY]->(l:Landlord) "
+        "OPTIONAL MATCH (b)-[:LOCATED_IN]->(n:Neighborhood) "
+        "RETURN "
+        "  b.bbl AS bbl, "
+        "  count(DISTINCT c) AS complaints, "
+        "  count(DISTINCT v) AS violations, "
+        "  count(DISTINCT l) AS landlords, "
+        "  collect(DISTINCT n.ntacode)[0] AS neighborhood"
+    )
     return
 
 
@@ -301,10 +319,10 @@ def _(driver, pd):
         ("Neighborhood", "MATCH (n:Neighborhood) RETURN count(n) AS n"),
     ]
     rerun_counts = []
-    with driver.session(database=_DATABASE) as session:
-        for label, q in rerun_queries:
-            count = session.run(q).single()["n"]
-            rerun_counts.append({"label": label, "count": count})
+    with driver.session(database=_DATABASE) as _session:
+        for _label, _q in rerun_queries:
+            _count = _session.run(_q).single()["n"]
+            rerun_counts.append({"label": _label, "count": _count})
 
     pd.DataFrame(rerun_counts)
     return

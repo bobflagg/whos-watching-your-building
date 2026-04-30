@@ -27,6 +27,7 @@ def ensure_constraints(driver) -> None:
         ("Agency", "agency_code"),
         ("Inspection", "inspection_id"),
         ("Neighborhood", "ntacode"),
+        ("DOBViolation", "violation_number"),
     ]
     with driver.session(database=_DATABASE) as session:
         for label, prop in constraints:
@@ -233,6 +234,38 @@ def load_neighborhoods(driver, df: pd.DataFrame) -> tuple[int, int]:
                 "MATCH (b:Building {bbl: row.bbl}) "
                 "MERGE (b)-[r:LOCATED_IN]->(n) "
                 "RETURN count(DISTINCT n) AS n, count(r) AS m",
+                rows=batch,
+            )
+            record = result.single()
+            nodes += record["n"]
+            rels += record["m"]
+    return nodes, rels
+
+
+def load_dob_safety_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE DOBViolation nodes and [:HAS_DOB_VIOLATION] relationships from Building.
+
+    Returns (nodes_written, rels_written).
+    """
+    nodes, rels = 0, 0
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MERGE (d:DOBViolation {violation_number: row.violation_number}) "
+                "  SET d += { "
+                "    violation_type: row.violation_type, "
+                "    violation_status: row.violation_status, "
+                "    violation_issue_date: row.violation_issue_date, "
+                "    violation_remarks: row.violation_remarks, "
+                "    device_type: row.device_type, "
+                "    bin: row.bin, "
+                "    bbl: row.bbl "
+                "  } "
+                "WITH d, row "
+                "MATCH (b:Building {bbl: row.bbl}) "
+                "MERGE (b)-[r:HAS_DOB_VIOLATION]->(d) "
+                "RETURN count(d) AS n, count(r) AS m",
                 rows=batch,
             )
             record = result.single()

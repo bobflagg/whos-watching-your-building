@@ -4,38 +4,42 @@ __generated_with = "0.23.2"
 app = marimo.App(width="full")
 
 
+@app.cell
+def _():
+    import marimo as mo
+
+    return (mo,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    # 311 HPD Complaints — Schema Exploration
-    **Dataset:** 311 Service Requests (`erm2-nwe9`), filtered to `agency='HPD'`
+    # DOB Safety Violations — Schema Exploration
+    **Dataset:** DOB Safety Violations (`855j-jady`)
 
-    Pulls the last `LOOKBACK_MONTHS` months, saves to `data/raw/`, and documents
-    schema, null rates, and BBL coverage for Phase 2 join planning.
+    Violations issued through DOB NOW (the current DOB system). Covers boilers,
+    elevators, gas piping, facades, benchmarking, structurally compromised buildings,
+    and more. Updated near-real-time; excludes legacy BIS violations and OATH summonses.
+
+    Full pull (no date filter) — captures all ~1.09M records, not just recent issues.
     """)
     return
 
 
 @app.cell
-def _(mo):
+def _():
     import sys
     #import marimo as mo
     import pandas as pd
     sys.path.insert(0, "..")
-    from src.ingest.soda_client import fetch_recent, cutoff_date, lookback_months
+    from src.ingest.soda_client import fetch_all_paginated
 
-    return cutoff_date, fetch_recent, lookback_months, mo, pd
-
-
-@app.cell
-def _(cutoff_date, lookback_months, mo):
-    mo.md(f"**Lookback window:** {lookback_months()} months (cutoff: {cutoff_date().strftime('%Y-%m-%d')})")
-    return
+    return fetch_all_paginated, pd
 
 
 @app.cell
-def _(fetch_recent):
-    df = fetch_recent("erm2-nwe9", "created_date", agency="HPD")
+def _(fetch_all_paginated):
+    df = fetch_all_paginated("855j-jady")
     print(f"Pulled {len(df):,} rows, {len(df.columns)} columns")
     return (df,)
 
@@ -43,7 +47,7 @@ def _(fetch_recent):
 @app.cell
 def _(df):
     import pathlib
-    out = pathlib.Path("../data/raw/311_hpd_complaints.parquet")
+    out = pathlib.Path("../data/raw/dob_safety_violations.parquet")
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out, index=False)
     print(f"Saved → {out}")
@@ -84,15 +88,38 @@ def _(df, mo):
     if bbl_col:
         non_null = df[bbl_col].notna().sum()
         total = len(df)
-        mo.md(f"**BBL field:** `{bbl_col}` — {non_null:,} / {total:,} non-null ({100*non_null/total:.1f}%)")
+        message = f"**BBL field:** `{bbl_col}` — {non_null:,} / {total:,} non-null ({100*non_null/total:.1f}%)"
     else:
-        mo.md("**BBL field:** not found — check column names above")
-    return bbl_col, non_null, total
+        message = "**BBL field:** not found — check column names above"
+    mo.md(message)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## Device Type Distribution
+    """)
+    return
 
 
 @app.cell
-def _(bbl_col, mo, non_null, total):
-    mo.md(f"**BBL field:** `{bbl_col}` — {non_null:,} / {total:,} non-null ({100*non_null/total:.1f}%)")
+def _(df):
+    df["device_type"].value_counts()
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## Violation Status Distribution
+    """)
+    return
+
+
+@app.cell
+def _(df):
+    df["violation_status"].value_counts()
     return
 
 

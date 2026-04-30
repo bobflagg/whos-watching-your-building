@@ -30,6 +30,23 @@ def fetch_all(dataset_id: str) -> pd.DataFrame:
     return pd.DataFrame.from_records(records)
 
 
+def fetch_all_paginated(dataset_id: str, page_size: int = 50_000) -> pd.DataFrame:
+    """Fetch all records from a dataset with no date filter, paginating past the 500k cap."""
+    client = Socrata(_DOMAIN, app_token=_APP_TOKEN, timeout=60)
+    all_records = []
+    offset = 0
+    try:
+        while True:
+            page = client.get(dataset_id, limit=page_size, offset=offset)
+            all_records.extend(page)
+            if len(page) < page_size:
+                break
+            offset += page_size
+    finally:
+        client.close()
+    return pd.DataFrame.from_records(all_records)
+
+
 def fetch_recent(dataset_id: str, date_field: str, **filters) -> pd.DataFrame:
     """Fetch records newer than the LOOKBACK_MONTHS cutoff.
 

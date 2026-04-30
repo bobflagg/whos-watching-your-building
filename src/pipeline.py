@@ -5,17 +5,19 @@ from src.graph.loader import (
     load_building_addresses,
     load_buildings,
     load_complaints,
+    load_dob_safety_violations,
     load_inspections,
     load_neighborhoods,
     load_registrations,
     load_violations,
 )
 from src.ingest.normalize import derive_bbl, normalize_bbl
-from src.ingest.soda_client import fetch_all, fetch_recent_paginated, lookback_months
+from src.ingest.soda_client import fetch_all, fetch_all_paginated, fetch_recent_paginated, lookback_months
 
 _311_DATASET = "erm2-nwe9"
 _VIOLATIONS_DATASET = "wvxf-dwi5"
 _REGISTRATIONS_DATASET = "tesw-yqqr"
+_DOB_SAFETY_VIOLATIONS_DATASET = "855j-jady"
 
 
 def run() -> None:
@@ -37,20 +39,28 @@ def run() -> None:
     registrations = fetch_all(_REGISTRATIONS_DATASET)
     print(f"  {len(registrations):,} registrations fetched")
 
+    print("Fetching DOB Safety Violations (full pull, paginated)...")
+    dob_violations = fetch_all_paginated(_DOB_SAFETY_VIOLATIONS_DATASET)
+    print(f"  {len(dob_violations):,} DOB safety violations fetched")
+
     # --- Normalize BBL ---
     complaints["bbl"] = normalize_bbl(complaints["bbl"])
     violations["bbl"] = normalize_bbl(violations["bbl"])
     registrations["bbl"] = derive_bbl(registrations)
+    dob_violations["bbl"] = normalize_bbl(dob_violations["bbl"])
 
     complaints_before = len(complaints)
     violations_before = len(violations)
+    dob_violations_before = len(dob_violations)
 
     complaints = complaints.dropna(subset=["bbl"])
     violations = violations.dropna(subset=["bbl"])
     registrations = registrations.dropna(subset=["bbl"])
+    dob_violations = dob_violations.dropna(subset=["bbl"])
 
     print(f"BBL normalization dropped {complaints_before - len(complaints):,} complaint rows")
     print(f"BBL normalization dropped {violations_before - len(violations):,} violation rows")
+    print(f"BBL normalization dropped {dob_violations_before - len(dob_violations):,} DOB violation rows")
     print(f"  {len(registrations):,} registrations after BBL derivation")
 
     # --- Load ---
@@ -64,6 +74,7 @@ def run() -> None:
         list(complaints["bbl"])
         + list(violations["bbl"])
         + list(registrations["bbl"])
+        + list(dob_violations["bbl"])
     )
     print("Loading Building nodes...")
     building_count = load_buildings(driver, all_bbls)
@@ -97,6 +108,10 @@ def run() -> None:
     print("Loading Landlord nodes and relationships...")
     l_nodes, l_rels = load_registrations(driver, registrations)
     print(f"  {l_nodes:,} Landlord nodes, {l_rels:,} OWNED_BY relationships")
+
+    print("Loading DOB Safety Violation nodes and relationships...")
+    d_nodes, d_rels = load_dob_safety_violations(driver, dob_violations)
+    print(f"  {d_nodes:,} DOBViolation nodes, {d_rels:,} HAS_DOB_VIOLATION relationships")
 
     driver.close()
     print("Done.")
