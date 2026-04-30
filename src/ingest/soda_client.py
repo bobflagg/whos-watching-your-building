@@ -47,6 +47,27 @@ def fetch_all_paginated(dataset_id: str, page_size: int = 50_000) -> pd.DataFram
     return pd.DataFrame.from_records(all_records)
 
 
+def fetch_sample(dataset_id: str, limit: int = 2_000, **filters) -> pd.DataFrame:
+    """Fetch a small sample from a dataset for exploration.
+
+    Extra keyword args are added as equality filters, e.g. agency='HPD'.
+    """
+    clauses = []
+    for field, value in filters.items():
+        clauses.append(f"{field}='{value}'")
+    where = " AND ".join(clauses) if clauses else None
+
+    client = Socrata(_DOMAIN, app_token=_APP_TOKEN, timeout=60)
+    try:
+        kwargs = {"limit": limit}
+        if where:
+            kwargs["where"] = where
+        records = client.get(dataset_id, **kwargs)
+    finally:
+        client.close()
+    return pd.DataFrame.from_records(records)
+
+
 def fetch_recent(dataset_id: str, date_field: str, **filters) -> pd.DataFrame:
     """Fetch records newer than the LOOKBACK_MONTHS cutoff.
 
