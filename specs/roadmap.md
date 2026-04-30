@@ -24,7 +24,7 @@ Load nodes and relationships into Neo4j, validate with sample Cypher queries
 **Phase 5 — Enrichment Data Ingestion** ✓
 Pull DOB Safety Violations (`855j-jady`), integrate into the existing graph
 
-**Phase 6 — ACRIS Ownership Ingestion**
+**Phase 6 — ACRIS Ownership Ingestion** ✓
 Pull ACRIS Deed Transfers (`636b-3b5g`); extract party names (buyers, sellers, LLC and corporate entities) and link them to Building nodes via BBL; enable ownership chain traversal across shell companies and related entities
 
 **Phase 7 — Embeddings**
