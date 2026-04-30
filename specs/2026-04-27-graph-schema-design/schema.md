@@ -97,9 +97,30 @@ One node per HPD registration record. Name-based deduplication is deferred; each
 | `registration_end_date` | String | `registrationenddate` | Yes |
 | `bbl` | String | derived via `derive_bbl()` | Yes |
 
-> **Note:** The fields `lifecyclestage`, `lastmodifieddate`, `ownerfirstname`, `ownerlastname`, and `ownertype` referenced in the existing loader (lines 137–141) do **not** exist in the `tesw-yqqr` SODA dataset as currently fetched. Remove them from the loader. Owner contact data may be available via a related HPD dataset (out of scope for Phase 3).
+> **Note:** Node label is `Registration`. Relationship is `OWNED_BY`. Contact names are stored on linked `Contact` nodes (see below), not directly on this node.
 
-> **Note:** Node label is `Registration`. Relationship is `OWNED_BY`. The 5 nonexistent fields (`lifecyclestage`, etc.) were removed from the loader in Phase 4.
+---
+
+### `Contact`
+
+One node per HPD registration contact record (`feu5-w2e2`). Each `Registration` can have multiple contacts of different types.
+
+| Property | Neo4j type | Source field | Nullable |
+|---|---|---|---|
+| `contact_id` ★ | String | `registrationcontactid` | No |
+| `type` | String | `type` | No — e.g. `HeadOfficer`, `Owner`, `CorporateOwner`, `IndividualOwner`, `Agent`, `SiteManager`, `Officer`, `Shareholder`, `JointOwner`, `Lessee` |
+| `contact_description` | String | `contactdescription` | Yes |
+| `corporation_name` | String | `corporationname` | Yes |
+| `first_name` | String | `firstname` | Yes |
+| `last_name` | String | `lastname` | Yes |
+| `title` | String | `title` | Yes |
+| `middle_initial` | String | `middleinitial` | Yes |
+| `business_house_number` | String | `businesshousenumber` | Yes |
+| `business_street_name` | String | `businessstreetname` | Yes |
+| `business_apartment` | String | `businessapartment` | Yes |
+| `business_city` | String | `businesscity` | Yes |
+| `business_state` | String | `businessstate` | Yes |
+| `business_zip` | String | `businesszip` | Yes |
 
 ---
 
@@ -152,6 +173,7 @@ All relationships carry no properties. All temporal and status data lives on nod
 | `LOCATED_IN` | `Building → Neighborhood` | Many-to-one | `bbl` → `ntacode` |
 | `HANDLED_BY` | `Complaint → Agency` | Many-to-one | `complaint_id` → `agency_code` |
 | `INSPECTED_BY` | `Violation → Inspection` | One-to-one | `violation_id` → `inspection_id` |
+| `CONTACT_FOR` | `Contact → Registration` | Many-to-one | `contact_id` → `registration_id` |
 
 > **Phase 4 loader fix required:** The existing loader writes `(Violation)-[FILED_AGAINST]->(Building)`. Rename to `HAS_VIOLATION` and reverse to `(Building)-[HAS_VIOLATION]->(Violation)`.
 
