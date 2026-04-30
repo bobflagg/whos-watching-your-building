@@ -24,6 +24,7 @@ def ensure_constraints(driver) -> None:
         ("Complaint", "complaint_id"),
         ("Violation", "violation_id"),
         ("Registration", "registration_id"),
+        ("Contact", "contact_id"),
         ("Agency", "agency_code"),
         ("Inspection", "inspection_id"),
         ("Neighborhood", "ntacode"),
@@ -266,6 +267,44 @@ def load_dob_safety_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
                 "MATCH (b:Building {bbl: row.bbl}) "
                 "MERGE (b)-[r:HAS_DOB_VIOLATION]->(d) "
                 "RETURN count(d) AS n, count(r) AS m",
+                rows=batch,
+            )
+            record = result.single()
+            nodes += record["n"]
+            rels += record["m"]
+    return nodes, rels
+
+
+def load_contacts(driver, df: pd.DataFrame) -> tuple[int, int]:
+    """MERGE Contact nodes and [:CONTACT_FOR] relationships to Registration.
+
+    Returns (nodes_written, rels_written).
+    """
+    nodes, rels = 0, 0
+    with driver.session(database=_DATABASE) as session:
+        for batch in _batches(df, _BATCH_SIZE):
+            result = session.run(
+                "UNWIND $rows AS row "
+                "MERGE (c:Contact {contact_id: row.registrationcontactid}) "
+                "  SET c += { "
+                "    type: row.type, "
+                "    contact_description: row.contactdescription, "
+                "    corporation_name: row.corporationname, "
+                "    first_name: row.firstname, "
+                "    last_name: row.lastname, "
+                "    title: row.title, "
+                "    middle_initial: row.middleinitial, "
+                "    business_house_number: row.businesshousenumber, "
+                "    business_street_name: row.businessstreetname, "
+                "    business_apartment: row.businessapartment, "
+                "    business_city: row.businesscity, "
+                "    business_state: row.businessstate, "
+                "    business_zip: row.businesszip "
+                "  } "
+                "WITH c, row "
+                "MATCH (r:Registration {registration_id: row.registrationid}) "
+                "MERGE (c)-[rel:CONTACT_FOR]->(r) "
+                "RETURN count(c) AS n, count(rel) AS m",
                 rows=batch,
             )
             record = result.single()

@@ -5,6 +5,7 @@ from src.graph.loader import (
     load_building_addresses,
     load_buildings,
     load_complaints,
+    load_contacts,
     load_dob_safety_violations,
     load_inspections,
     load_neighborhoods,
@@ -17,6 +18,7 @@ from src.ingest.soda_client import fetch_all, fetch_all_paginated, fetch_recent_
 _311_DATASET = "erm2-nwe9"
 _VIOLATIONS_DATASET = "wvxf-dwi5"
 _REGISTRATIONS_DATASET = "tesw-yqqr"
+_CONTACTS_DATASET = "feu5-w2e2"
 _DOB_SAFETY_VIOLATIONS_DATASET = "855j-jady"
 
 
@@ -38,6 +40,10 @@ def run() -> None:
     print("Fetching HPD registrations (full pull)...")
     registrations = fetch_all(_REGISTRATIONS_DATASET)
     print(f"  {len(registrations):,} registrations fetched")
+
+    print("Fetching HPD registration contacts (full pull, paginated)...")
+    contacts = fetch_all_paginated(_CONTACTS_DATASET)
+    print(f"  {len(contacts):,} contacts fetched")
 
     print("Fetching DOB Safety Violations (full pull, paginated)...")
     dob_violations = fetch_all_paginated(_DOB_SAFETY_VIOLATIONS_DATASET)
@@ -108,6 +114,10 @@ def run() -> None:
     print("Loading Registration nodes and relationships...")
     l_nodes, l_rels = load_registrations(driver, registrations)
     print(f"  {l_nodes:,} Registration nodes, {l_rels:,} OWNED_BY relationships")
+
+    print("Loading Contact nodes and relationships...")
+    ct_nodes, ct_rels = load_contacts(driver, contacts)
+    print(f"  {ct_nodes:,} Contact nodes, {ct_rels:,} CONTACT_FOR relationships")
 
     print("Loading DOB Safety Violation nodes and relationships...")
     d_nodes, d_rels = load_dob_safety_violations(driver, dob_violations)
