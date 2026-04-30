@@ -13,7 +13,7 @@ Ingest and normalize the three core datasets, implement BBL resolution logic, va
 Define and document node types, relationship types, and cardinalities before building:
 - `(Complaint) -[FILED_AGAINST]-> (Building/BBL)`
 - `(Building) -[HAS_VIOLATION]-> (Violation)`
-- `(Building) -[OWNED_BY]-> (Landlord)`
+- `(Building) -[OWNED_BY]-> (Registration)`
 - `(Building) -[LOCATED_IN]-> (Neighborhood/NTA)`
 - `(Complaint) -[HANDLED_BY]-> (Agency)`
 - `(Violation) -[INSPECTED_BY]-> (Inspection)`

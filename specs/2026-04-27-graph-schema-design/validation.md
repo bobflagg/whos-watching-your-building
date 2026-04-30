@@ -10,12 +10,12 @@ Phase 3 is complete and ready to merge when all of the following are true.
 ## Schema completeness
 
 - [ ] All 7 node types are defined with a properties table and a named identity key:
-  `Building`, `Complaint`, `Violation`, `Landlord`, `Agency`, `Inspection`, `Neighborhood`
+  `Building`, `Complaint`, `Violation`, `Registration`, `Agency`, `Inspection`, `Neighborhood`
 - [ ] All 6 relationship types are defined with direction, cardinality, and the identity keys used to resolve each side:
   `FILED_AGAINST`, `HAS_VIOLATION`, `OWNED_BY`, `LOCATED_IN`, `HANDLED_BY`, `INSPECTED_BY`
 - [ ] Every property name uses snake_case
 - [ ] No relationship type carries properties (all temporal/status data is on nodes)
-- [ ] `Landlord` identity key is `registrationid`
+- [ ] `Registration` identity key is `registrationid`
 - [ ] `Building` identity key is `bbl` (10-digit string, boro + block + lot)
 
 ## DDL correctness

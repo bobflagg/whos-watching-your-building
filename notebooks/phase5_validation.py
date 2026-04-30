@@ -191,7 +191,7 @@ def _(driver, mo):
                 MATCH (b:Building {bbl: $bbl})
                 OPTIONAL MATCH (b)-[:HAS_VIOLATION]->(v:Violation)
                 OPTIONAL MATCH (b)-[:HAS_DOB_VIOLATION]->(d:DOBViolation)
-                OPTIONAL MATCH (l:Landlord)-[:OWNED_BY]->(b)
+                OPTIONAL MATCH (l:Registration)-[:OWNED_BY]->(b)
                 RETURN
                   b.bbl              AS bbl,
                   b.house_number     AS house_number,
@@ -210,7 +210,7 @@ def _(driver, mo):
     |---|---|
     | HPD violations | {_record['hpd_violations']} |
     | DOB violations | {_record['dob_violations']} |
-    | Landlord registrations | {_record['landlords']} |
+    | Registration registrations | {_record['landlords']} |
         """)
     return
 

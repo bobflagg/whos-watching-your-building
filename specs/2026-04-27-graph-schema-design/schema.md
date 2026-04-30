@@ -85,7 +85,7 @@ One node per HPD violation record.
 
 ---
 
-### `Landlord`
+### `Registration`
 
 One node per HPD registration record. Name-based deduplication is deferred; each `registrationid` is a distinct node.
 
@@ -99,7 +99,7 @@ One node per HPD registration record. Name-based deduplication is deferred; each
 
 > **Note:** The fields `lifecyclestage`, `lastmodifieddate`, `ownerfirstname`, `ownerlastname`, and `ownertype` referenced in the existing loader (lines 137–141) do **not** exist in the `tesw-yqqr` SODA dataset as currently fetched. Remove them from the loader. Owner contact data may be available via a related HPD dataset (out of scope for Phase 3).
 
-> **Phase 4 loader fix required:** Node label is currently `Registration` — rename to `Landlord`. Relationship is currently `REGISTERED_TO` — rename to `OWNED_BY`. Remove the 5 nonexistent fields from the Cypher SET clause.
+> **Note:** Node label is `Registration`. Relationship is `OWNED_BY`. The 5 nonexistent fields (`lifecyclestage`, etc.) were removed from the loader in Phase 4.
 
 ---
 
@@ -148,7 +148,7 @@ All relationships carry no properties. All temporal and status data lives on nod
 |---|---|---|---|
 | `FILED_AGAINST` | `Complaint → Building` | Many-to-one | `complaint_id` → `bbl` |
 | `HAS_VIOLATION` | `Building → Violation` | One-to-many | `bbl` → `violation_id` |
-| `OWNED_BY` | `Building → Landlord` | Many-to-one (per registration) | `bbl` → `registration_id` |
+| `OWNED_BY` | `Building → Registration` | Many-to-one (per registration) | `bbl` → `registration_id` |
 | `LOCATED_IN` | `Building → Neighborhood` | Many-to-one | `bbl` → `ntacode` |
 | `HANDLED_BY` | `Complaint → Agency` | Many-to-one | `complaint_id` → `agency_code` |
 | `INSPECTED_BY` | `Violation → Inspection` | One-to-one | `violation_id` → `inspection_id` |
@@ -170,7 +170,7 @@ See `constraints_and_indexes.cypher` for the full DDL.
 | `Building` | `bbl` |
 | `Complaint` | `complaint_id` |
 | `Violation` | `violation_id` |
-| `Landlord` | `registration_id` |
+| `Registration` | `registration_id` |
 | `Agency` | `agency_code` |
 | `Inspection` | `inspection_id` |
 | `Neighborhood` | `ntacode` |
@@ -185,6 +185,6 @@ See `constraints_and_indexes.cypher` for the full DDL.
 | `Violation` | `status` | Filter open vs. closed violations |
 | `Violation` | `class` | Filter by HPD violation class (A/B/C) |
 | `Violation` | `current_status` | Filter by current enforcement status |
-| `Landlord` | `registration_id` | Already covered by uniqueness constraint |
+| `Registration` | `registration_id` | Already covered by uniqueness constraint |
 | `Building` | `zip` | Geographic filtering |
 | `Building` | `community_board` | Geographic filtering |

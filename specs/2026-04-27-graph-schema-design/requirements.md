@@ -11,7 +11,7 @@ Design and document the complete Neo4j graph schema before any data is loaded (P
 | `Building` | BBL join key across all three datasets | `bbl` (10-digit string: boro + block + lot) |
 | `Complaint` | 311 Service Requests (`erm2-nwe9`, HPD filter) | `unique_key` |
 | `Violation` | HPD Violations (`wvxf-dwi5`) | `violationid` |
-| `Landlord` | HPD Registrations (`tesw-yqqr`) | `registrationid` |
+| `Registration` | HPD Registrations (`tesw-yqqr`) | `registrationid` |
 | `Agency` | Derived from Complaint records | `agency_code` (e.g., `"HPD"`) |
 | `Inspection` | Derived from Violation records | composite: `violationid` + `inspectiondate` |
 | `Neighborhood` | NTA codes on Building/Complaint records | `ntacode` |
@@ -22,7 +22,7 @@ Design and document the complete Neo4j graph schema before any data is loaded (P
 |---|---|---|
 | `FILED_AGAINST` | `(Complaint)->(Building)` | Many-to-one |
 | `HAS_VIOLATION` | `(Building)->(Violation)` | One-to-many |
-| `OWNED_BY` | `(Building)->(Landlord)` | Many-to-one (per registration) |
+| `OWNED_BY` | `(Building)->(Registration)` | Many-to-one (per registration) |
 | `LOCATED_IN` | `(Building)->(Neighborhood)` | Many-to-one |
 | `HANDLED_BY` | `(Complaint)->(Agency)` | Many-to-one |
 | `INSPECTED_BY` | `(Violation)->(Inspection)` | One-to-one |
@@ -31,7 +31,7 @@ Design and document the complete Neo4j graph schema before any data is loaded (P
 
 **All node types defined upfront.** Enrichment nodes (Agency, Inspection, Neighborhood) are first-class nodes with defined properties and identity keys — not stubs. Phase 4 loading targets this complete schema.
 
-**Landlord identity = `registrationid`.** One `Landlord` node per HPD registration record, keyed by `registrationid`. Name-based deduplication (fuzzy or exact) is deferred to a future enrichment phase. This is lossless and keeps loading logic simple.
+**Registration identity = `registrationid`.** One `Registration` node per HPD registration record, keyed by `registrationid`. Name-based deduplication (fuzzy or exact) is deferred to a future enrichment phase. This is lossless and keeps loading logic simple.
 
 **Relationships carry no properties.** All temporal data (dates, statuses) lives on the nodes they naturally belong to. This simplifies querying and indexing and avoids the complexity of relationship-property indexes in Neo4j.
 

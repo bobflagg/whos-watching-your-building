@@ -4,12 +4,12 @@
 
 Files to edit: `src/graph/loader.py`
 
-1.1 Rename Registration node label to `Landlord` in `load_registrations()`  
-1.2 Rename relationship `REGISTERED_TO` to `OWNED_BY`, correct direction to `(Landlord)-[:OWNED_BY]->(Building)`  
+1.1 Rename Registration node label to `Registration` in `load_registrations()`  
+1.2 Rename relationship `REGISTERED_TO` to `OWNED_BY`, correct direction to `(Registration)-[:OWNED_BY]->(Building)`  
 1.3 Flip violation relationship: replace `(Violation)-[:FILED_AGAINST]->(Building)` with `(Building)-[:HAS_VIOLATION]->(Violation)`  
 1.4 Fix violation field name: replace `row.violationtype` with `row.novtype`  
 1.5 Remove nonexistent fields from violation `SET` clause: `lifecyclestage`, `lastmodifieddate`, `ownerfirstname`, `ownerlastname`, `ownertype`  
-1.6 Update `ensure_constraints()` to use `Landlord` label (was `Registration`)
+1.6 Update `ensure_constraints()` to use `Registration` label (was `Registration`)
 
 ---
 
@@ -31,12 +31,12 @@ Files to edit: `src/graph/loader.py`
 
 4.1 Create `notebooks/phase4_validation.py` as a marimo notebook  
 4.2 Notebook should cover:
-  - Node counts by label: Building, Complaint, Violation, Landlord, Agency, Neighborhood, Inspection
+  - Node counts by label: Building, Complaint, Violation, Registration, Agency, Neighborhood, Inspection
   - Relationship counts by type: FILED_AGAINST, HAS_VIOLATION, OWNED_BY, LOCATED_IN, HANDLED_BY, INSPECTED_BY
   - BBL join coverage: % of Complaints with a connected Building node
   - BBL join coverage: % of Violations with a connected Building node
-  - % of Buildings with at least one Landlord (OWNED_BY)
-  - Sample traversal: given a BBL, show its Complaints, Violations, and Landlord
+  - % of Buildings with at least one Registration (OWNED_BY)
+  - Sample traversal: given a BBL, show its Complaints, Violations, and Registration
   - Constraint verification: confirm all 7 uniqueness constraints are present
 
 ---

@@ -105,9 +105,9 @@ def run() -> None:
     n_nodes, n_rels = load_neighborhoods(driver, violations)
     print(f"  {n_nodes:,} Neighborhood nodes, {n_rels:,} LOCATED_IN relationships")
 
-    print("Loading Landlord nodes and relationships...")
+    print("Loading Registration nodes and relationships...")
     l_nodes, l_rels = load_registrations(driver, registrations)
-    print(f"  {l_nodes:,} Landlord nodes, {l_rels:,} OWNED_BY relationships")
+    print(f"  {l_nodes:,} Registration nodes, {l_rels:,} OWNED_BY relationships")
 
     print("Loading DOB Safety Violation nodes and relationships...")
     d_nodes, d_rels = load_dob_safety_violations(driver, dob_violations)

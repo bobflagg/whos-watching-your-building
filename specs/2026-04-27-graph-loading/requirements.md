@@ -33,8 +33,8 @@ Load the full knowledge graph into Neo4j by correcting the loader bugs identifie
 
 ## Known bugs to fix (from Phase 3 schema spec)
 
-1. **Registration label** — currently `Registration`, must be `Landlord`
-2. **Registration relationship** — currently `REGISTERED_TO`, must be `OWNED_BY`; direction: `(Landlord)-[:OWNED_BY]->(Building)`
+1. **Registration label** — currently `Registration`, must be `Registration`
+2. **Registration relationship** — currently `REGISTERED_TO`, must be `OWNED_BY`; direction: `(Registration)-[:OWNED_BY]->(Building)`
 3. **Violation relationship direction** — currently `(Violation)-[:FILED_AGAINST]->(Building)`, must be `(Building)-[:HAS_VIOLATION]->(Violation)`
 4. **Violation field name** — loader references `row.violationtype` (doesn't exist in SODA); correct field is `row.novtype`
 5. **Violation node junk fields** — loader sets `lifecyclestage`, `lastmodifieddate`, `ownerfirstname`, `ownerlastname`, `ownertype` which do not exist in the HPD violations dataset; remove them

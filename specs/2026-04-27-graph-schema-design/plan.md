@@ -9,7 +9,7 @@
 ## Task Group 2 — Node schema definitions
 
 2.1 Write the node property table for each of the 7 node types:
-    - `Building`, `Complaint`, `Violation`, `Landlord`, `Agency`, `Inspection`, `Neighborhood`
+    - `Building`, `Complaint`, `Violation`, `Registration`, `Agency`, `Inspection`, `Neighborhood`
     - Columns: property name, Neo4j type, source field, nullable, notes
 2.2 Confirm `bbl` construction logic (boro + block + lot zero-padded to 10 chars) matches Phase 2 join logic.
 2.3 Define the `Inspection` composite identity (since it has no natural surrogate key in the source data).

@@ -23,7 +23,7 @@ def ensure_constraints(driver) -> None:
         ("Building", "bbl"),
         ("Complaint", "complaint_id"),
         ("Violation", "violation_id"),
-        ("Landlord", "registration_id"),
+        ("Registration", "registration_id"),
         ("Agency", "agency_code"),
         ("Inspection", "inspection_id"),
         ("Neighborhood", "ntacode"),
@@ -275,7 +275,7 @@ def load_dob_safety_violations(driver, df: pd.DataFrame) -> tuple[int, int]:
 
 
 def load_registrations(driver, df: pd.DataFrame) -> tuple[int, int]:
-    """MERGE Landlord nodes and [:OWNED_BY] relationships from Building.
+    """MERGE Registration nodes and [:OWNED_BY] relationships from Building.
 
     Returns (nodes_written, rels_written).
     """
@@ -284,7 +284,7 @@ def load_registrations(driver, df: pd.DataFrame) -> tuple[int, int]:
         for batch in _batches(df, _BATCH_SIZE):
             result = session.run(
                 "UNWIND $rows AS row "
-                "MERGE (l:Landlord {registration_id: row.registrationid}) "
+                "MERGE (l:Registration {registration_id: row.registrationid}) "
                 "  SET l += { "
                 "    building_id: row.buildingid, "
                 "    last_registration_date: row.lastregistrationdate, "

@@ -50,7 +50,7 @@ def _(driver, pd):
         ("Building",     "MATCH (n:Building)     RETURN count(n) AS n"),
         ("Complaint",    "MATCH (n:Complaint)    RETURN count(n) AS n"),
         ("Violation",    "MATCH (n:Violation)    RETURN count(n) AS n"),
-        ("Landlord",     "MATCH (n:Landlord)     RETURN count(n) AS n"),
+        ("Registration",     "MATCH (n:Registration)     RETURN count(n) AS n"),
         ("Agency",       "MATCH (n:Agency)       RETURN count(n) AS n"),
         ("Inspection",   "MATCH (n:Inspection)   RETURN count(n) AS n"),
         ("Neighborhood", "MATCH (n:Neighborhood) RETURN count(n) AS n"),
@@ -80,7 +80,7 @@ def _(driver, pd):
     rel_queries = [
         ("FILED_AGAINST",  "(Complaint)→(Building)",   "MATCH (:Complaint)-[r:FILED_AGAINST]->(:Building)   RETURN count(r) AS n"),
         ("HAS_VIOLATION",  "(Building)→(Violation)",   "MATCH (:Building)-[r:HAS_VIOLATION]->(:Violation)   RETURN count(r) AS n"),
-        ("OWNED_BY",       "(Building)→(Landlord)",    "MATCH (:Building)-[r:OWNED_BY]->(:Landlord)         RETURN count(r) AS n"),
+        ("OWNED_BY",       "(Building)→(Registration)",    "MATCH (:Building)-[r:OWNED_BY]->(:Registration)         RETURN count(r) AS n"),
         ("LOCATED_IN",     "(Building)→(Neighborhood)","MATCH (:Building)-[r:LOCATED_IN]->(:Neighborhood)   RETURN count(r) AS n"),
         ("HANDLED_BY",     "(Complaint)→(Agency)",     "MATCH (:Complaint)-[r:HANDLED_BY]->(:Agency)        RETURN count(r) AS n"),
         ("INSPECTED_BY",   "(Violation)→(Inspection)", "MATCH (:Violation)-[r:INSPECTED_BY]->(:Inspection)  RETURN count(r) AS n"),
@@ -148,7 +148,7 @@ def _(driver, pd):
 
         total_buildings = _session.run("MATCH (n:Building) RETURN count(n) AS n").single()["n"]
         owned_buildings = _session.run(
-            "MATCH (b:Building)-[:OWNED_BY]->(:Landlord) RETURN count(DISTINCT b) AS n"
+            "MATCH (b:Building)-[:OWNED_BY]->(:Registration) RETURN count(DISTINCT b) AS n"
         ).single()["n"]
 
     c_pct = 100 * linked_complaints / total_complaints if total_complaints else 0
@@ -205,7 +205,7 @@ def _(driver, pd):
         ("Building", "bbl"),
         ("Complaint", "complaint_id"),
         ("Violation", "violation_id"),
-        ("Landlord", "registration_id"),
+        ("Registration", "registration_id"),
         ("Agency", "agency_code"),
         ("Inspection", "inspection_id"),
         ("Neighborhood", "ntacode"),
@@ -231,7 +231,7 @@ def _(mo):
     mo.md(r"""
     ## 6. Sample Traversal
 
-    Pick one BBL and show its connected Complaints, Violations, and Landlord.
+    Pick one BBL and show its connected Complaints, Violations, and Registration.
     A non-empty result confirms the graph is navigable end-to-end.
     """)
     return
@@ -242,7 +242,7 @@ def _(driver, mo):
     with driver.session(database=_DATABASE) as _session:
         sample_bbl_result = _session.run(
             "MATCH (b:Building)-[:HAS_VIOLATION]->(:Violation) "
-            "MATCH (b)-[:OWNED_BY]->(:Landlord) "
+            "MATCH (b)-[:OWNED_BY]->(:Registration) "
             "RETURN b.bbl AS bbl LIMIT 1"
         ).single()
 
@@ -255,7 +255,7 @@ def _(driver, mo):
                 "MATCH (b:Building {bbl: $bbl}) "
                 "OPTIONAL MATCH (c:Complaint)-[:FILED_AGAINST]->(b) "
                 "OPTIONAL MATCH (b)-[:HAS_VIOLATION]->(v:Violation) "
-                "OPTIONAL MATCH (b)-[:OWNED_BY]->(l:Landlord) "
+                "OPTIONAL MATCH (b)-[:OWNED_BY]->(l:Registration) "
                 "OPTIONAL MATCH (b)-[:LOCATED_IN]->(n:Neighborhood) "
                 "RETURN "
                 "  b.bbl AS bbl, "
@@ -273,7 +273,7 @@ def _(driver, mo):
     |---|---|
     | Complaints | {record['complaints']} |
     | Violations | {record['violations']} |
-    | Landlord registrations | {record['landlords']} |
+    | Registration registrations | {record['landlords']} |
     | Neighborhood (NTA) | {record['neighborhood'] or 'n/a'} |
         """)
     return
@@ -285,7 +285,7 @@ def _():
         "MATCH (b:Building {bbl: $bbl}) "
         "OPTIONAL MATCH (c:Complaint)-[:FILED_AGAINST]->(b) "
         "OPTIONAL MATCH (b)-[:HAS_VIOLATION]->(v:Violation) "
-        "OPTIONAL MATCH (b)-[:OWNED_BY]->(l:Landlord) "
+        "OPTIONAL MATCH (b)-[:OWNED_BY]->(l:Registration) "
         "OPTIONAL MATCH (b)-[:LOCATED_IN]->(n:Neighborhood) "
         "RETURN "
         "  b.bbl AS bbl, "
@@ -313,7 +313,7 @@ def _(driver, pd):
         ("Building",     "MATCH (n:Building)     RETURN count(n) AS n"),
         ("Complaint",    "MATCH (n:Complaint)    RETURN count(n) AS n"),
         ("Violation",    "MATCH (n:Violation)    RETURN count(n) AS n"),
-        ("Landlord",     "MATCH (n:Landlord)     RETURN count(n) AS n"),
+        ("Registration",     "MATCH (n:Registration)     RETURN count(n) AS n"),
         ("Agency",       "MATCH (n:Agency)       RETURN count(n) AS n"),
         ("Inspection",   "MATCH (n:Inspection)   RETURN count(n) AS n"),
         ("Neighborhood", "MATCH (n:Neighborhood) RETURN count(n) AS n"),

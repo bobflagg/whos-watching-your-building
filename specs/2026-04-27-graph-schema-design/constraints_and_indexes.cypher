@@ -18,8 +18,8 @@ CREATE CONSTRAINT complaint_id_unique IF NOT EXISTS
 CREATE CONSTRAINT violation_id_unique IF NOT EXISTS
   FOR (n:Violation) REQUIRE n.violation_id IS UNIQUE;
 
-CREATE CONSTRAINT landlord_registration_id_unique IF NOT EXISTS
-  FOR (n:Landlord) REQUIRE n.registration_id IS UNIQUE;
+CREATE CONSTRAINT registration_registration_id_unique IF NOT EXISTS
+  FOR (n:Registration) REQUIRE n.registration_id IS UNIQUE;
 
 CREATE CONSTRAINT agency_code_unique IF NOT EXISTS
   FOR (n:Agency) REQUIRE n.agency_code IS UNIQUE;
